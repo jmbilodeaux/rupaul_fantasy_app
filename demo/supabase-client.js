@@ -51,6 +51,7 @@ window.SB = (() => {
       .map((p, i) => ({
         id: i + 1,
         _uuid: p.id,
+        _authId: p.auth_id,   // the Supabase Auth user ID — used to match the session
         name: p.display_name,
         isAdmin: p.is_admin,
         team: subMap[p.id].queen_ids,
@@ -163,7 +164,7 @@ window.SB = (() => {
 
   function getCurrentPlayer() {
     if (!_session) return null;
-    return LEAGUE_PLAYERS.find(p => p._uuid === _session.user.id) || null;
+    return LEAGUE_PLAYERS.find(p => p._authId === _session.user.id) || null;
   }
 
   async function signInWithEmail(email) {
