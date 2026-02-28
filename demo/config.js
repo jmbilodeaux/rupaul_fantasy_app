@@ -7,6 +7,6 @@
 // (uses the hardcoded data in data.js instead of the real database).
 
 window.SUPABASE_CONFIG = {
-  url:     '',   // e.g. 'https://xyzxyz.supabase.co'
-  anonKey: '',   // the long 'anon / public' JWT string
+  url:     'https://ctwmqnjhythrjqrcwchl.supabase.co',
+  anonKey: 'sb_publishable_aWnbTOZPxFuONW22CMJsgw_r2umUiBa',
 };
