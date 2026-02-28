@@ -17,8 +17,8 @@
       <h3>Viewing As (My Team)</h3>
       <label>Switch to see any player's team view:</label>
       <select id="player-select"></select>
-      <div style="margin-top:8px;font-size:11px;color:rgba(255,200,0,0.8)">
-        ⚠️ Player names are placeholders — share the Leaderboard tab CSV to fill these in.
+      <div style="margin-top:8px;font-size:11px;color:rgba(52,199,89,0.8)">
+        ✓ Real names + teams loaded from the spreadsheet.
       </div>
     </div>
 
@@ -37,10 +37,9 @@
       <p>
         1. <strong>Board</strong> — tap a player row → jumps to their My Team.<br><br>
         2. <strong>My Team</strong> — switch "Viewing As" above, see 5-queen breakdown.<br><br>
-        3. <strong>Queens</strong> — see who's still in vs eliminated, sorted by points.<br><br>
-        4. <strong>Episodes</strong> — tap an aired episode to see queen scores.<br><br>
-        5. <strong>Admin → Ep 9</strong> — enter codes, watch preview, post scores.<br>
-        Also try eliminating a queen from the admin tab.
+        3. <strong>Teams</strong> — see all 20 teams at once. Tap a queen's name to filter — shows only players who drafted her.<br><br>
+        4. <strong>Queens</strong> — cast list sorted by points earned.<br><br>
+        5. <strong>Admin → Ep 9</strong> — enter codes per queen (E/C accumulate), H–K for season-end bonuses. Watch the preview update live, then post.
       </p>
     </div>
 
@@ -73,6 +72,7 @@
       <div class="screen-wrap">
         <div class="screen active" id="screen-leaderboard"></div>
         <div class="screen"        id="screen-myteam"></div>
+        <div class="screen"        id="screen-teams"></div>
         <div class="screen"        id="screen-queens"></div>
         <div class="screen"        id="screen-episodes"></div>
         <div class="screen"        id="screen-admin"></div>
@@ -87,13 +87,13 @@
           <span class="tab-icon">👑</span>
           <span class="tab-label">My Team</span>
         </button>
+        <button class="tab" data-tab="teams">
+          <span class="tab-icon">👥</span>
+          <span class="tab-label">Teams</span>
+        </button>
         <button class="tab" data-tab="queens">
           <span class="tab-icon">👸</span>
           <span class="tab-label">Queens</span>
-        </button>
-        <button class="tab" data-tab="episodes">
-          <span class="tab-icon">📺</span>
-          <span class="tab-label">Episodes</span>
         </button>
         <button class="tab" data-tab="admin">
           <span class="tab-icon">⚙️</span>

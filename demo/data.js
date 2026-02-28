@@ -107,30 +107,30 @@ const SHOW_QUEENS = [
 ];
 
 // ── League Players ────────────────────────────────────────────
-// PLACEHOLDER names — will be replaced once Leaderboard tab CSV is shared.
-// Each player picks 5 queens (by queen ID) and nominates one as their winner pick.
-// Their leaderboard score = sum of all 5 queens' episode points.
+// Real names + teams from the "Weekly Tribe Points" sheet of the xlsx.
+// team: array of 5 queen IDs (X marks in spreadsheet)
+// pickedWinner: queen ID they nominated as season winner (Y mark), null if none
 const LEAGUE_PLAYERS = [
-  { id:1,  name:"Player 1 ⚠️",  avatar:"🌟", team:[8,7,13,12,9],  pickedWinner:8  },
-  { id:2,  name:"Player 2 ⚠️",  avatar:"💫", team:[7,9,13,1,4],   pickedWinner:13 },
-  { id:3,  name:"Player 3 ⚠️",  avatar:"✨", team:[8,13,12,7,6],  pickedWinner:7  },
-  { id:4,  name:"Player 4 ⚠️",  avatar:"🔥", team:[9,7,1,11,4],   pickedWinner:9  },
-  { id:5,  name:"Player 5 ⚠️",  avatar:"🌙", team:[13,8,12,7,6],  pickedWinner:13 },
-  { id:6,  name:"Player 6 ⚠️",  avatar:"💎", team:[7,8,13,1,11],  pickedWinner:8  },
-  { id:7,  name:"Player 7 ⚠️",  avatar:"🎭", team:[12,9,13,8,7],  pickedWinner:12 },
-  { id:8,  name:"Player 8 ⚠️",  avatar:"👑", team:[8,13,7,9,1],   pickedWinner:7  },
-  { id:9,  name:"Player 9 ⚠️",  avatar:"🌺", team:[13,12,8,7,4],  pickedWinner:13 },
-  { id:10, name:"Player 10 ⚠️", avatar:"🦋", team:[7,9,8,1,6],   pickedWinner:9  },
-  { id:11, name:"Player 11 ⚠️", avatar:"🌸", team:[13,8,9,12,11], pickedWinner:8  },
-  { id:12, name:"Player 12 ⚠️", avatar:"⚡", team:[8,7,12,13,4],  pickedWinner:8  },
-  { id:13, name:"Player 13 ⚠️", avatar:"🎪", team:[9,13,7,1,11],  pickedWinner:13 },
-  { id:14, name:"Player 14 ⚠️", avatar:"🌈", team:[12,8,7,9,13],  pickedWinner:7  },
-  { id:15, name:"Player 15 ⚠️", avatar:"🦄", team:[7,13,8,12,6],  pickedWinner:13 },
-  { id:16, name:"Player 16 ⚠️", avatar:"🐉", team:[8,9,13,7,11],  pickedWinner:8  },
-  { id:17, name:"Player 17 ⚠️", avatar:"🌊", team:[13,7,9,12,1],  pickedWinner:13 },
-  { id:18, name:"Player 18 ⚠️", avatar:"🎵", team:[8,13,12,7,4],  pickedWinner:12 },
-  { id:19, name:"Player 19 ⚠️", avatar:"🍀", team:[7,9,13,8,6],   pickedWinner:7  },
-  { id:20, name:"Player 20 ⚠️", avatar:"🌻", team:[13,8,7,9,12],  pickedWinner:9  },
+  { id: 1,  name: "Mary Grace", team: [7, 8, 9, 12, 13], pickedWinner: null },
+  { id: 2,  name: "Jordan",     team: [4, 8, 12, 13, 14], pickedWinner: 7   },
+  { id: 3,  name: "Evan",       team: [4, 8, 12, 13, 14], pickedWinner: 7   },
+  { id: 4,  name: "Jill",       team: [1, 6, 7, 8, 11],   pickedWinner: null },
+  { id: 5,  name: "Matthew",    team: [1, 4, 7, 9, 13],   pickedWinner: null },
+  { id: 6,  name: "Meredith",   team: [3, 7, 8, 9, 12],   pickedWinner: null },
+  { id: 7,  name: "Mikayla",    team: [4, 5, 8, 12, 13],  pickedWinner: 7   },
+  { id: 8,  name: "Mere",       team: [1, 7, 9, 11, 14],  pickedWinner: 8   },
+  { id: 9,  name: "Emilee",     team: [1, 3, 11, 12, 13], pickedWinner: null },
+  { id: 10, name: "Marci",      team: [7, 8, 9, 10, 12],  pickedWinner: 11  },
+  { id: 11, name: "Gaetan",     team: [1, 5, 8, 9, 13],   pickedWinner: null },
+  { id: 12, name: "Andi",       team: [1, 10, 12, 13, 14], pickedWinner: 7  },
+  { id: 13, name: "Emma",       team: [3, 4, 9, 13, 14],  pickedWinner: 7   },
+  { id: 14, name: "Frankie",    team: [3, 8, 9, 10, 13],  pickedWinner: 4   },
+  { id: 15, name: "Cabell",     team: [5, 8, 10, 11, 13], pickedWinner: 7   },
+  { id: 16, name: "Ellie",      team: [1, 5, 7, 11, 14],  pickedWinner: null },
+  { id: 17, name: "Britt",      team: [2, 3, 7, 9, 12],   pickedWinner: null },
+  { id: 18, name: "Nadine",     team: [2, 6, 7, 9, 14],   pickedWinner: null },
+  { id: 19, name: "Haley",      team: [1, 3, 9, 10, 12],  pickedWinner: null },
+  { id: 20, name: "Jeri",       team: [3, 5, 9, 10, 13],  pickedWinner: null },
 ];
 
 // ── Season Config ────────────────────────────────────────────
@@ -142,6 +142,8 @@ const SEASON_CONFIG = {
   teamsLocked:   true,    // locked once Ep 1 airs
   potPerPlayer:  20,      // $20 buy-in
   potSplit:      { first: 0.60, second: 0.25, third: 0.15 },
+  seasonWinner:  null,    // set at finale (queen ID)
+  missCongen:    null,    // set at finale (queen ID)
   get totalPot() { return LEAGUE_PLAYERS.length * this.potPerPlayer; },
 };
 

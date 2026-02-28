@@ -5,12 +5,11 @@
 // ── App State ─────────────────────────────────────────────────
 let state = {
   currentTab:    'leaderboard',
-  viewingPlayer: 1,
+  viewingPlayer: 4,        // default: Jill (the app owner)
   expandedEp:    null,
   adminModal:    false,
-  // Score entry state for next episode: { queenId: { A:bool, B:bool, C:int, D:bool, E:int, F:bool, G:bool } }
+  teamsFilter:   null,     // queen ID to filter teams by, or null for all
   pendingCodes:  {},
-  // Queen elimination state (mutable in demo)
   queens: SHOW_QUEENS.map(q => ({ ...q })),
 };
 
@@ -126,7 +125,7 @@ function renderLeaderboard() {
              onclick="selectPlayer(${p.id}); switchTab('myteam')">
           <div class="rank-chip ${top ? 'rank-' + rank : 'rank-n'}">${medal}</div>
           <div class="row-info">
-            <div class="row-name">${p.avatar} ${p.name}</div>
+            <div class="row-name">${p.name}</div>
             <div class="row-sub">
               ${top
                 ? `<span class="winnings-tag">💰 $${getPotWinning(rank)} projected</span>`
@@ -211,7 +210,7 @@ function renderMyTeam() {
   document.getElementById('screen-myteam').innerHTML = `
     <div class="team-player-header">
       <div class="header-sub" style="margin-bottom:4px">Viewing as</div>
-      <div class="header-title">${player.avatar} ${player.name}</div>
+      <div class="header-title">${player.name}</div>
       <div class="team-total-row" style="margin-top:12px">
         <div>
           <div class="team-total-label">Total Points</div>
@@ -355,10 +354,120 @@ function renderEpisodes() {
   `;
 }
 
+// ── Screen: Teams ─────────────────────────────────────────────
+function renderTeams() {
+  const ranked   = getRankedPlayers();
+  const myPlayer = LEAGUE_PLAYERS.find(p => p.id === state.viewingPlayer);
+  const filter   = state.teamsFilter;
+  const activeQueens = state.queens.filter(q => !q.eliminated);
+
+  // Queen filter chips
+  const filterChips = `
+    <div class="queen-filter-wrap">
+      <div class="queen-filter-scroll">
+        <button class="qf-chip ${!filter ? 'active' : ''}" onclick="setTeamsFilter(null)">All players</button>
+        ${state.queens.map(q => {
+          const initials = q.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+          const count = LEAGUE_PLAYERS.filter(p => p.team.includes(q.id)).length;
+          return `<button class="qf-chip ${filter===q.id ? 'active' : ''} ${q.eliminated ? 'elim' : ''}"
+                          style="--qcolor:${q.color}"
+                          onclick="setTeamsFilter(${q.id})">
+            <span class="qf-dot" style="background:${q.color}">${initials}</span>
+            ${q.name.split(' ')[0]} (${count})
+          </button>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  // Filtered + ranked players
+  const displayed = filter
+    ? ranked.filter(p => p.team.includes(filter))
+    : ranked;
+
+  const playerCards = displayed.map((p, i) => {
+    const rank   = ranked.findIndex(r => r.id === p.id) + 1;
+    const isMe   = p.id === state.viewingPlayer;
+    const medal  = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+
+    const queenDots = p.team.map(qid => {
+      const q = getQueen(qid);
+      if (!q) return '';
+      const initials = q.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+      const isWinner = p.pickedWinner === qid;
+      const isHighlit = filter === qid;
+      return `
+        <div class="team-queen-dot ${q.eliminated ? 'elim' : ''} ${isHighlit ? 'highlit' : ''}"
+             style="background:${q.eliminated ? '#333' : q.color}"
+             title="${q.name}${isWinner ? ' 👑' : ''}${q.eliminated ? ' (eliminated)' : ''}">
+          ${initials}${isWinner ? '<span class="crown-pip">👑</span>' : ''}
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="team-card ${isMe ? 'is-me' : ''}" onclick="selectPlayer(${p.id}); switchTab('myteam')">
+        <div class="team-card-left">
+          <div class="team-rank-sm ${rank<=3?'medal':''}">${medal}</div>
+          <div>
+            <div class="team-player-name">${isMe ? '★ ' : ''}${p.name}</div>
+            <div class="team-queen-dots">${queenDots}</div>
+            ${p.pickedWinner ? `<div class="team-win-pick">👑 Pick: ${getQueen(p.pickedWinner)?.name || '?'}</div>` : ''}
+          </div>
+        </div>
+        <div class="team-score-col">
+          <div class="team-score-val ${rank<=3?'gold':''}">${p.total}</div>
+          <div class="team-score-lbl">pts</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const filterLabel = filter
+    ? `Players with ${getQueen(filter)?.name} (${displayed.length})`
+    : `All ${LEAGUE_PLAYERS.length} players`;
+
+  document.getElementById('screen-teams').innerHTML = `
+    <div class="screen-header">
+      <div class="header-title">👥 All Teams</div>
+      <div class="header-sub">Tap a player to see their full breakdown · ★ = you</div>
+    </div>
+    ${filterChips}
+    <div class="section-label">${filterLabel.toUpperCase()}</div>
+    ${playerCards}
+    <div style="height:20px"></div>
+  `;
+}
+
+function setTeamsFilter(queenId) {
+  state.teamsFilter = queenId;
+  renderTeams();
+}
+
 // ── Screen: Admin ─────────────────────────────────────────────
 function renderAdmin() {
   const cfg    = SEASON_CONFIG;
   const nextEp = cfg.airedEpisodes + 1;
+
+  const allRules = Object.entries(SCORING_RULES);
+  const quickRef = allRules.map(([code, rule]) => {
+    const isNeg     = rule.points < 0;
+    const isSeasonal = rule.seasonal;
+    const bg = isSeasonal
+      ? 'linear-gradient(135deg,#cc8800,#996600)' : isNeg
+      ? 'linear-gradient(135deg,#555,#333)'
+      : 'linear-gradient(135deg,var(--pink),var(--purple))';
+    const textColor  = isSeasonal ? '#000' : '#fff';
+    const ptsColor   = isSeasonal ? 'var(--gold)' : isNeg ? 'var(--red)' : 'var(--green)';
+    const accum      = rule.accumulates ? ' ×' : '';
+    return `
+      <div class="qr-row">
+        <div class="qr-code" style="background:${bg};color:${textColor}">${code}</div>
+        <div class="qr-label">${rule.label}${rule.accumulates ? ' <em>(stacks)</em>' : ''}</div>
+        <div class="qr-pts" style="color:${ptsColor}">${rule.points > 0 ? '+' : ''}${rule.points}${accum}</div>
+      </div>
+    `;
+  }).join('');
 
   document.getElementById('screen-admin').innerHTML = `
     <div class="screen-header pink-grad">
@@ -375,6 +484,9 @@ function renderAdmin() {
       <div class="admin-stat"><div class="s-val">$${cfg.totalPot}</div><div class="s-label">Pot</div></div>
     </div>
 
+    <div class="section-label">QUICK REFERENCE</div>
+    <div class="admin-quick-ref">${quickRef}</div>
+
     <div class="section-label">SCORE ENTRY</div>
     <button class="admin-action-btn" onclick="openScoreModal()">
       <span class="btn-icon">➕</span>
@@ -390,6 +502,7 @@ function renderAdmin() {
     </div>
     ${state.queens.filter(q => !q.eliminated).sort((a,b) => a.name.localeCompare(b.name)).map(q => {
       const initials = q.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+      const draftedBy = LEAGUE_PLAYERS.filter(p => p.team.includes(q.id)).length;
       return `
         <div class="admin-secondary-btn" style="justify-content:space-between"
              onclick="confirmEliminate(${q.id})">
@@ -397,10 +510,10 @@ function renderAdmin() {
             <div class="queen-dot" style="background:${q.color};width:34px;height:34px;font-size:12px;flex-shrink:0">${initials}</div>
             <div>
               <div style="font-size:14px;font-weight:600">${q.name}</div>
-              <div style="font-size:11px;color:var(--text-sub)">${queenTotal(q)} pts total</div>
+              <div style="font-size:11px;color:var(--text-sub)">${queenTotal(q)} pts · on ${draftedBy} teams</div>
             </div>
           </div>
-          <div style="color:var(--red);font-size:12px;font-weight:700">Eliminate ✕</div>
+          <div style="color:var(--red);font-size:12px;font-weight:700">Out ✕</div>
         </div>
       `;
     }).join('')}
@@ -410,28 +523,27 @@ function renderAdmin() {
       ${state.queens.filter(q => q.eliminated).map(q => {
         const initials = q.name.split(' ').map(w=>w[0]).join('').slice(0,2);
         return `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;opacity:0.5">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;opacity:0.45">
             <div class="queen-dot" style="background:${q.color};width:34px;height:34px;font-size:12px;flex-shrink:0">${initials}</div>
-            <div style="font-size:14px;color:var(--text-sub)">${q.name} — out Ep ${q.eliminatedEp}</div>
+            <div style="font-size:14px;color:var(--text-sub)">${q.name} — eliminated Ep ${q.eliminatedEp}</div>
           </div>
         `;
       }).join('')}
     ` : ''}
 
-    <div class="section-label">OTHER ACTIONS</div>
-    <button class="admin-secondary-btn" onclick="showToast('📣 Push notification sent to all players!')">
+    <div class="section-label">OTHER</div>
+    <button class="admin-secondary-btn" onclick="showToast('Reminder sent to all players!')">
       <span>📣</span>
-      <div><div>Notify All Players</div><div style="font-size:11px;color:var(--text-sub);margin-top:2px">Alert everyone that scores are updated</div></div>
+      <div><div>Notify All Players</div><div style="font-size:11px;color:var(--text-sub);margin-top:2px">Push notification that scores updated</div></div>
     </button>
-    <button class="admin-secondary-btn" onclick="showToast('🔒 Teams locked — no edits allowed')">
+    <button class="admin-secondary-btn" onclick="showToast('Teams are locked — Ep 1 has aired')">
       <span>🔒</span>
-      <div><div>Team Lock Status</div><div style="font-size:11px;color:var(--text-sub);margin-top:2px">${cfg.teamsLocked ? 'Locked — Ep 1 has aired' : 'Open — players can still edit'}</div></div>
+      <div><div>Team Submissions ${cfg.teamsLocked ? 'Locked' : 'Open'}</div><div style="font-size:11px;color:var(--text-sub);margin-top:2px">${cfg.teamsLocked ? 'Ep 1 has aired — no more changes' : 'Players can still edit their teams'}</div></div>
     </button>
 
     <div style="height:20px"></div>
   `;
 
-  // Append the score modal (hidden until opened)
   renderScoreModal();
 }
 
@@ -440,10 +552,10 @@ function renderScoreModal() {
   const nextEp = SEASON_CONFIG.airedEpisodes + 1;
   const active = getActiveQueens();
 
-  // Init pending codes for each active queen
+  // Init pending codes for each active queen (E/C are counts; others are booleans)
   active.forEach(q => {
     if (!state.pendingCodes[q.id]) {
-      state.pendingCodes[q.id] = { A:false, B:false, C:0, D:false, E:0, F:false, G:false };
+      state.pendingCodes[q.id] = { A:false, B:false, C:0, D:false, E:0, F:false, G:false, H:false, I:false, J:false, K:false };
     }
   });
 
@@ -478,7 +590,9 @@ function renderScoreModal() {
       <div class="modal-title">Ep ${nextEp} Scores</div>
     </div>
     <div style="font-size:12px;color:var(--text-sub);padding:10px 14px 4px">
-      Only queens still in the competition are shown. E and C accumulate — tap multiple times.
+      Only queens still in the competition are shown.<br>
+      <strong style="color:var(--text)">E and C accumulate</strong> — tap multiple times to add more.
+      H/I/J/K are end-of-season bonuses — use at the finale.
     </div>
     ${queenForms}
     <div class="section-label">PLAYER SCORE PREVIEW</div>
@@ -501,17 +615,17 @@ function renderCodeButtons(queenId) {
   const codes = state.pendingCodes[queenId];
   if (!codes) return '';
 
-  // Toggle codes (once per episode): A, B, D, F, G
+  // Regular episode codes
   const toggleCodes = ['A','B','D','F','G'];
-  // Accumulator codes (tap to add): E, C
   const accumCodes  = ['E','C'];
+  // End-of-season bonuses
+  const seasonalCodes = ['H','I','J','K'];
 
   const toggleHtml = toggleCodes.map(code => {
-    const rule   = SCORING_RULES[code];
-    const active = codes[code];
-    const isNeg  = rule.points < 0;
+    const rule  = SCORING_RULES[code];
+    const isNeg = rule.points < 0;
     return `
-      <button class="code-toggle ${active ? 'selected' : ''} ${isNeg ? 'neg-code' : ''}"
+      <button class="code-toggle ${codes[code] ? 'selected' : ''} ${isNeg ? 'neg-code' : ''}"
               onclick="toggleCode(${queenId},'${code}')">
         ${code} <span class="code-pts-label">${rule.points > 0 ? '+' : ''}${rule.points}</span>
       </button>
@@ -533,14 +647,30 @@ function renderCodeButtons(queenId) {
     `;
   }).join('');
 
-  return toggleHtml + accumHtml;
+  const seasonalHtml = seasonalCodes.map(code => {
+    const rule = SCORING_RULES[code];
+    return `
+      <button class="code-toggle seasonal-code ${codes[code] ? 'selected' : ''}"
+              onclick="toggleCode(${queenId},'${code}')">
+        ${code} <span class="code-pts-label">+${rule.points}</span>
+      </button>
+    `;
+  }).join('');
+
+  return `
+    ${toggleHtml}${accumHtml}
+    <div class="seasonal-divider">
+      <span>Season-end bonuses</span>
+    </div>
+    ${seasonalHtml}
+  `;
 }
 
 function calcPendingPoints(queenId) {
   const codes = state.pendingCodes[queenId];
   if (!codes) return 0;
   let pts = 0;
-  ['A','B','D','F','G'].forEach(c => { if (codes[c]) pts += SCORING_RULES[c].points; });
+  ['A','B','D','F','G','H','I','J','K'].forEach(c => { if (codes[c]) pts += SCORING_RULES[c].points; });
   ['E','C'].forEach(c => { pts += (codes[c] || 0) * SCORING_RULES[c].points; });
   return pts;
 }
@@ -597,7 +727,7 @@ function updateScorePreview() {
     <div class="preview-title">How player scores will change</div>
     ${deltas.map(({ player, delta }) => `
       <div class="preview-row">
-        <div class="preview-name">${player.avatar} ${player.name}</div>
+        <div class="preview-name">${player.name}</div>
         <div class="preview-delta">${delta > 0 ? '+' : ''}${delta} pts</div>
       </div>
     `).join('')}
@@ -607,7 +737,7 @@ function updateScorePreview() {
 function openScoreModal() {
   // Reset pending codes for each active queen
   getActiveQueens().forEach(q => {
-    state.pendingCodes[q.id] = { A:false, B:false, C:0, D:false, E:0, F:false, G:false };
+    state.pendingCodes[q.id] = { A:false, B:false, C:0, D:false, E:0, F:false, G:false, H:false, I:false, J:false, K:false };
   });
   state.adminModal = true;
   renderScoreModal();
@@ -637,6 +767,10 @@ function submitEpisodeScores() {
     for (let i = 0; i < (codes.E || 0); i++) parts.push('E');
     if (codes.F) parts.push('F');
     if (codes.G) parts.push('G');
+    if (codes.H) parts.push('H');
+    if (codes.I) parts.push('I');
+    if (codes.J) parts.push('J');
+    if (codes.K) parts.push('K');
 
     const pts = calcPendingPoints(queen.id);
     queen.episodeCodes[nextEp]  = parts.join(',');
@@ -683,6 +817,7 @@ function renderScreen(tab) {
   switch (tab) {
     case 'leaderboard': renderLeaderboard(); break;
     case 'myteam':      renderMyTeam();      break;
+    case 'teams':       renderTeams();       break;
     case 'queens':      renderQueens();      break;
     case 'episodes':    renderEpisodes();    break;
     case 'admin':       renderAdmin();       break;
@@ -712,7 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
     LEAGUE_PLAYERS.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
-      opt.textContent = `${p.avatar} ${p.name}`;
+      opt.textContent = p.name;
       sel.appendChild(opt);
     });
     sel.value = state.viewingPlayer;
