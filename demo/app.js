@@ -900,15 +900,42 @@ function toggleEpisode(num) {
 async function adminRequestMagicLink() {
   const email = document.getElementById('admin-email-input')?.value?.trim();
   if (!email) { showToast('Enter your email first'); return; }
-  const btn = document.querySelector('#screen-admin .admin-action-btn');
-  if (btn) btn.textContent = 'Sending…';
+
   const { error } = await window.SB.signInWithEmail(email);
-  if (error) {
-    showToast(`❌ ${error.message}`);
+  if (error) { showToast(`❌ ${error.message}`); return; }
+
+  // Switch card to "waiting" state — user taps link in email, comes back and taps button
+  const card = document.querySelector('.admin-login-card');
+  if (card) card.innerHTML = `
+    <div class="login-icon">✉️</div>
+    <div class="login-heading">Check your email</div>
+    <div class="login-sub">
+      Sent a magic link to <strong style="color:var(--text)">${email}</strong>.<br><br>
+      Tap the link in your email, then come back here and tap the button below.
+    </div>
+    <button class="admin-action-btn" onclick="adminCheckSession()">
+      <span class="btn-icon">✓</span>
+      <div><div>I've tapped the link</div><div class="btn-sub">Tap to sign in</div></div>
+    </button>
+    <button class="admin-secondary-btn" style="margin-top:8px" onclick="renderAdmin()">
+      Try a different email
+    </button>
+  `;
+}
+
+async function adminCheckSession() {
+  const btn = document.querySelector('.admin-login-card .admin-action-btn');
+  if (btn) btn.textContent = 'Checking…';
+  const session = await window.SB.recheckSession();
+  if (session) {
+    state.queens = SHOW_QUEENS.map(q => ({ ...q }));
+    const me = window.SB.getCurrentPlayer();
+    if (me) state.viewingPlayer = me.id;
+    renderAll();
   } else {
-    showToast('✅ Magic link sent! Check your email.');
+    showToast('Not found yet — make sure you tapped the link in your email first.');
+    if (btn) btn.innerHTML = '<span class="btn-icon">✓</span><div><div>I\'ve tapped the link</div><div class="btn-sub">Tap to sign in</div></div>';
   }
-  if (btn) { btn.innerHTML = '<span class="btn-icon">✉️</span><div><div>Send Magic Link</div><div class="btn-sub">No password needed</div></div>'; }
 }
 
 async function adminSignOut() {

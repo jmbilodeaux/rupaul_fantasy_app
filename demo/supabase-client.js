@@ -149,6 +149,16 @@ window.SB = (() => {
     return applyData();
   }
 
+  // Re-checks localStorage for a session (call after returning from magic link in Safari)
+  async function recheckSession() {
+    const sb = client();
+    if (!sb) return null;
+    const { data: { session } } = await sb.auth.getSession();
+    _session = session;
+    if (session) await applyData();
+    return session;
+  }
+
   function getSession() { return _session; }
 
   function getCurrentPlayer() {
@@ -197,6 +207,6 @@ window.SB = (() => {
       .eq('id', queenId);
   }
 
-  return { init, refreshData, getSession, getCurrentPlayer,
+  return { init, refreshData, recheckSession, getSession, getCurrentPlayer,
            signInWithEmail, signOut, postEpisodeScores, eliminateQueen };
 })();
