@@ -1,5 +1,5 @@
 // sw.js — Service Worker for Drag Race Fantasy League PWA
-const CACHE = 'drag-race-v1';
+const CACHE = 'drag-race-v2';
 const STATIC = [
   './',
   './index.html',
