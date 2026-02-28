@@ -1,0 +1,19 @@
+{
+  "name": "Drag Race Fantasy League",
+  "short_name": "DragFantasy",
+  "description": "RuPaul's Drag Race fantasy scoring app for your friend group",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#FF1493",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

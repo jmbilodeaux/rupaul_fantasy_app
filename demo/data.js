@@ -11,7 +11,7 @@
 // League player names/teams are placeholder until Leaderboard tab CSV is shared.
 // ============================================================
 
-const SCORING_RULES = {
+var SCORING_RULES = {
   // Accumulating — can happen multiple times per queen per episode
   E: { points:  1, label: "Makes Ru laugh / Acrobatic / Winning bestie", emoji: "😂", accumulates: true  },
   C: { points:  2, label: "Wig snatch / Clothing reveal",                emoji: "💇‍♀️", accumulates: true  },
@@ -33,7 +33,7 @@ const SCORING_RULES = {
 // episodeCodes: exactly as entered in the CSV cell.
 // episodePoints: the calculated totals from the POINTS section.
 // eliminated: inferred from where codes stop — admin can update in-app.
-const SHOW_QUEENS = [
+var SHOW_QUEENS = [
   {
     id: 1, name: "Athena Dion", color: "#FF6B9D", eliminated: false,
     episodeCodes:  { 1:"E,G,B",  2:"B",    3:"B",   4:"E,B,G", 5:"",        6:"D,B,E,E",       7:"B,E",         8:"B,E,E,E"                },
@@ -110,7 +110,7 @@ const SHOW_QUEENS = [
 // Real names + teams from the "Weekly Tribe Points" sheet of the xlsx.
 // team: array of 5 queen IDs (X marks in spreadsheet)
 // pickedWinner: queen ID they nominated as season winner (Y mark), null if none
-const LEAGUE_PLAYERS = [
+var LEAGUE_PLAYERS = [
   { id: 1,  name: "Mary Grace", team: [7, 8, 9, 12, 13], pickedWinner: null },
   { id: 2,  name: "Jordan",     team: [4, 8, 12, 13, 14], pickedWinner: 7   },
   { id: 3,  name: "Evan",       team: [4, 8, 12, 13, 14], pickedWinner: 7   },
@@ -134,7 +134,7 @@ const LEAGUE_PLAYERS = [
 ];
 
 // ── Season Config ────────────────────────────────────────────
-const SEASON_CONFIG = {
+var SEASON_CONFIG = {
   name:          "RuPaul's Drag Race",
   shortName:     "RPDR",
   totalEpisodes: 16,
@@ -148,7 +148,7 @@ const SEASON_CONFIG = {
 };
 
 // ── Episode Summaries ─────────────────────────────────────────
-const EPISODES = [
+var EPISODES = [
   { number:1,  title:"Episode 1",  aired:true,  summary:"Nini Coco dominates with a Maxi win (D+B = 13 pts). Kenya Pleaser scores big with E+A+E." },
   { number:2,  title:"Episode 2",  aired:true,  summary:"Jane Don't sweeps with E+E+D (12 pts). Mia Starr wins Mini with E+A." },
   { number:3,  title:"Episode 3",  aired:true,  summary:"Juicy Love Dion wins the Maxi (D = 10 pts). Darlene Mitchell wins Mini (A = 5 pts)." },

@@ -10,7 +10,7 @@ let state = {
   adminModal:    false,
   teamsFilter:   null,     // queen ID to filter teams by, or null for all
   pendingCodes:  {},
-  queens: SHOW_QUEENS.map(q => ({ ...q })),
+  queens: [],  // populated in init() after data loads
 };
 
 // ── Core Helpers ──────────────────────────────────────────────
@@ -469,13 +469,46 @@ function renderAdmin() {
     `;
   }).join('');
 
+  // Determine auth state
+  const session       = window.SB?.getSession() || null;
+  const currentPlayer = window.SB?.getCurrentPlayer() || null;
+  const isAdmin       = currentPlayer?.isAdmin === true;
+  const sbConfigured  = !!(window.SUPABASE_CONFIG?.url);
+
+  // If Supabase is configured but user isn't an authenticated admin, show login screen
+  if (sbConfigured && !isAdmin) {
+    document.getElementById('screen-admin').innerHTML = `
+      <div class="screen-header pink-grad">
+        <div class="header-title">⚙️ Admin</div>
+        <div class="header-sub">League management</div>
+      </div>
+      <div class="admin-login-card">
+        <div class="login-icon">🔐</div>
+        <div class="login-heading">Admin Sign In</div>
+        <div class="login-sub">Enter your email — we'll send you a one-tap magic link.</div>
+        <input type="email" id="admin-email-input" class="login-email-input"
+               placeholder="your@email.com" autocomplete="email" />
+        <button class="admin-action-btn" style="margin-top:12px" onclick="adminRequestMagicLink()">
+          <span class="btn-icon">✉️</span>
+          <div>
+            <div>Send Magic Link</div>
+            <div class="btn-sub">No password needed</div>
+          </div>
+        </button>
+        ${session ? `<div class="login-sub" style="margin-top:16px;color:var(--text-sub)">Signed in as ${session.user.email} — but this account isn't linked to an admin player yet.<br><br>Ask the league manager to run:<br><code style="font-size:10px;color:var(--green)">UPDATE players SET auth_id='${session.user.id}' WHERE display_name='YourName';</code></div>
+        <button class="admin-secondary-btn" style="margin-top:8px" onclick="adminSignOut()">Sign out</button>` : ''}
+      </div>
+    `;
+    return;
+  }
+
   document.getElementById('screen-admin').innerHTML = `
     <div class="screen-header pink-grad">
       <div class="header-title">⚙️ Admin</div>
-      <div class="header-sub">League management · password-protected in production</div>
+      <div class="header-sub">${sbConfigured ? `Signed in as ${currentPlayer?.name || session?.user?.email} · <a href="#" onclick="adminSignOut();return false;" style="color:var(--pink)">Sign out</a>` : 'League management · demo mode'}</div>
     </div>
 
-    <div class="admin-header-note">⚠️ Demo mode — changes apply to this session only.</div>
+    <div class="admin-header-note">${sbConfigured ? '🟢 Connected to Supabase — score posts save to the real database.' : '⚠️ Demo mode — changes apply to this session only.'}</div>
 
     <div class="admin-stat-row">
       <div class="admin-stat"><div class="s-val">${LEAGUE_PLAYERS.length}</div><div class="s-label">Players</div></div>
@@ -750,50 +783,74 @@ function closeScoreModal() {
   if (modal) modal.classList.remove('open');
 }
 
-function submitEpisodeScores() {
+async function submitEpisodeScores() {
   const nextEp = SEASON_CONFIG.airedEpisodes + 1;
 
-  // Apply pending codes to each queen's episode data
-  getActiveQueens().forEach(queen => {
+  // Build codes array for each active queen
+  const queensCodes = getActiveQueens().map(queen => {
     const codes = state.pendingCodes[queen.id];
-    if (!codes) return;
-
-    // Build code string (e.g. "D,E,E,E,B")
     const parts = [];
-    if (codes.A) parts.push('A');
-    if (codes.B) parts.push('B');
-    for (let i = 0; i < (codes.C || 0); i++) parts.push('C');
-    if (codes.D) parts.push('D');
-    for (let i = 0; i < (codes.E || 0); i++) parts.push('E');
-    if (codes.F) parts.push('F');
-    if (codes.G) parts.push('G');
-    if (codes.H) parts.push('H');
-    if (codes.I) parts.push('I');
-    if (codes.J) parts.push('J');
-    if (codes.K) parts.push('K');
-
-    const pts = calcPendingPoints(queen.id);
-    queen.episodeCodes[nextEp]  = parts.join(',');
-    queen.episodePoints[nextEp] = pts;
+    if (codes?.A) parts.push('A');
+    if (codes?.B) parts.push('B');
+    for (let i = 0; i < (codes?.C || 0); i++) parts.push('C');
+    if (codes?.D) parts.push('D');
+    for (let i = 0; i < (codes?.E || 0); i++) parts.push('E');
+    if (codes?.F) parts.push('F');
+    if (codes?.G) parts.push('G');
+    if (codes?.H) parts.push('H');
+    if (codes?.I) parts.push('I');
+    if (codes?.J) parts.push('J');
+    if (codes?.K) parts.push('K');
+    return { queen_id: queen.id, codes: parts };
   });
 
-  SEASON_CONFIG.airedEpisodes = nextEp;
-  state.pendingCodes = {};
+  const session = window.SB?.getSession();
+  if (session) {
+    // Post to Supabase and reload all data
+    closeScoreModal();
+    showToast('⏳ Saving scores…');
+    const result = await window.SB.postEpisodeScores(nextEp, queensCodes);
+    if (result?.ok) {
+      await window.SB.refreshData();
+      state.queens = SHOW_QUEENS.map(q => ({ ...q }));
+      state.pendingCodes = {};
+      showToast(`✅ Episode ${nextEp} scores posted!`);
+    } else {
+      showToast(`❌ ${result?.error || 'Failed to save scores'}`);
+      return;
+    }
+  } else {
+    // Demo / offline mode: apply locally in memory
+    getActiveQueens().forEach(queen => {
+      const qc = queensCodes.find(x => x.queen_id === queen.id);
+      if (!qc) return;
+      queen.episodeCodes[nextEp]  = qc.codes.join(',');
+      queen.episodePoints[nextEp] = calcPendingPoints(queen.id);
+    });
+    SEASON_CONFIG.airedEpisodes = nextEp;
+    state.pendingCodes = {};
+    closeScoreModal();
+    showToast(`✅ Episode ${nextEp} scores posted! (local demo)`);
+  }
 
-  closeScoreModal();
-  showToast(`✅ Episode ${nextEp} scores posted!`);
   renderAll();
 }
 
 // ── Queen Elimination ─────────────────────────────────────────
-function confirmEliminate(queenId) {
+async function confirmEliminate(queenId) {
   const queen = getQueen(queenId);
   if (!queen) return;
 
-  // Simple confirm in demo (production would be a modal)
   if (confirm(`Eliminate ${queen.name}? Their past points are kept but they won't appear in future score entry.`)) {
-    queen.eliminated    = true;
-    queen.eliminatedEp  = SEASON_CONFIG.airedEpisodes;
+    const session = window.SB?.getSession();
+    if (session) {
+      await window.SB.eliminateQueen(queenId, SEASON_CONFIG.airedEpisodes);
+      await window.SB.refreshData();
+      state.queens = SHOW_QUEENS.map(q => ({ ...q }));
+    } else {
+      queen.eliminated   = true;
+      queen.eliminatedEp = SEASON_CONFIG.airedEpisodes;
+    }
     showToast(`💔 ${queen.name} has been eliminated`);
     renderAdmin();
     renderQueens();
@@ -839,8 +896,81 @@ function toggleEpisode(num) {
   renderEpisodes();
 }
 
+// ── Auth Helpers ──────────────────────────────────────────────
+async function adminRequestMagicLink() {
+  const email = document.getElementById('admin-email-input')?.value?.trim();
+  if (!email) { showToast('Enter your email first'); return; }
+  const btn = document.querySelector('#screen-admin .admin-action-btn');
+  if (btn) btn.textContent = 'Sending…';
+  const { error } = await window.SB.signInWithEmail(email);
+  if (error) {
+    showToast(`❌ ${error.message}`);
+  } else {
+    showToast('✅ Magic link sent! Check your email.');
+  }
+  if (btn) { btn.innerHTML = '<span class="btn-icon">✉️</span><div><div>Send Magic Link</div><div class="btn-sub">No password needed</div></div>'; }
+}
+
+async function adminSignOut() {
+  await window.SB?.signOut();
+  showToast('Signed out');
+  renderAdmin();
+}
+
+// Called by supabase-client.js when real-time data changes arrive
+window.onSupabaseUpdate = () => {
+  state.queens = SHOW_QUEENS.map(q => ({ ...q }));
+  renderAll();
+};
+
 // ── Boot ──────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Register service worker for PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(err => {
+      console.warn('SW registration failed:', err);
+    });
+  }
+
+  // Generate apple-touch-icon from canvas (iOS home screen)
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 512, 512);
+    grad.addColorStop(0, '#FF1493');
+    grad.addColorStop(1, '#8B008B');
+    ctx.fillStyle = grad;
+    roundRect(ctx, 0, 0, 512, 512, 112);
+    ctx.fill();
+    // Crown shape
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.moveTo(80, 332); ctx.lineTo(150, 158); ctx.lineTo(256, 250);
+    ctx.lineTo(362, 158); ctx.lineTo(432, 332); ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(80, 332, 352, 76);
+    // Jewels
+    [[80,332],[150,158],[256,250],[362,158],[432,332]].forEach(([x,y], i) => {
+      ctx.fillStyle = i % 2 === 0 ? '#FF1493' : '#CC44FF';
+      ctx.beginPath(); ctx.arc(x, y, 26, 0, Math.PI*2); ctx.fill();
+    });
+    const link = document.createElement('link');
+    link.rel = 'apple-touch-icon';
+    link.href = canvas.toDataURL('image/png');
+    document.head.appendChild(link);
+  } catch(e) { /* ignore if canvas not available */ }
+
+  // Load data from Supabase (or fall back to static data.js)
+  await window.SB.init();
+
+  // Initialize queens from whichever data source was used
+  state.queens = SHOW_QUEENS.map(q => ({ ...q }));
+
+  // If logged in, set viewingPlayer to the current user
+  const me = window.SB.getCurrentPlayer();
+  if (me) state.viewingPlayer = me.id;
+
   // Player selector
   const sel = document.getElementById('player-select');
   if (sel) {
@@ -864,3 +994,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderAll();
 });
+
+// Helper for rounded rect (canvas)
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}

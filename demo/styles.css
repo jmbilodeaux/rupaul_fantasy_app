@@ -282,3 +282,94 @@ body {
   .sidebar { max-width:393px; width:100%; order:2; }
   .phone-wrap { order:1; }
 }
+
+/* ── PWA / Auth styles ──────────────────────────────────────── */
+
+/* Admin login card */
+.admin-login-card {
+  margin: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+}
+
+.login-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.login-heading {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.login-sub {
+  font-size: 13px;
+  color: var(--text-sub);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.login-email-input {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1.5px solid var(--card-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  color: var(--text);
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.login-email-input:focus {
+  border-color: var(--pink);
+}
+
+.login-email-input::placeholder {
+  color: var(--text-sub);
+}
+
+/* iOS safe area support for standalone PWA */
+@media all and (display-mode: standalone) {
+  .tab-bar {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    height: auto;
+  }
+  .home-bar {
+    display: none;
+  }
+  .phone {
+    border-radius: 0;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    box-shadow: none;
+    border: none;
+  }
+  .phone-wrap {
+    display: block;
+    padding: 0;
+    align-items: unset;
+  }
+  .sidebar {
+    display: none;
+  }
+  .dynamic-island {
+    display: none;
+  }
+  .status-bar {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  body {
+    background: #000;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+}
