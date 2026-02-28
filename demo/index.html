@@ -8,74 +8,76 @@
 </head>
 <body>
 
-  <!-- ── Sidebar (desktop UX notes) ─────────────────────── -->
+  <!-- ── Sidebar ──────────────────────────────────────────── -->
   <aside class="sidebar">
     <h1>👑 Drag Race<br>Fantasy League</h1>
-    <p class="tagline">Interactive UX Prototype · v0.1</p>
+    <p class="tagline">Interactive UX Prototype · v0.2</p>
 
-    <!-- Player switcher -->
     <div class="sidebar-card player-switcher">
-      <h3>Viewing As</h3>
-      <label>Select your fantasy player to see their My Team view:</label>
+      <h3>Viewing As (My Team)</h3>
+      <label>Switch to see any player's team view:</label>
       <select id="player-select"></select>
+      <div style="margin-top:8px;font-size:11px;color:rgba(255,200,0,0.8)">
+        ⚠️ Player names are placeholders — share the Leaderboard tab CSV to fill these in.
+      </div>
     </div>
 
-    <!-- Scoring legend -->
     <div class="sidebar-card">
-      <h3>Quick Point Reference</h3>
+      <h3>How Scoring Works</h3>
+      <p>
+        Admin enters codes per <strong>queen</strong> each episode.<br><br>
+        Each player's score = <strong>sum of their 5 queens' points</strong>.<br><br>
+        <strong>E & C accumulate</strong> — tap multiple times.<br>
+        All other codes are once per queen per episode.
+      </p>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>Try These Flows</h3>
+      <p>
+        1. <strong>Board</strong> — tap a player row → jumps to their My Team.<br><br>
+        2. <strong>My Team</strong> — switch "Viewing As" above, see 5-queen breakdown.<br><br>
+        3. <strong>Queens</strong> — see who's still in vs eliminated, sorted by points.<br><br>
+        4. <strong>Episodes</strong> — tap an aired episode to see queen scores.<br><br>
+        5. <strong>Admin → Ep 9</strong> — enter codes, watch preview, post scores.<br>
+        Also try eliminating a queen from the admin tab.
+      </p>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>Quick Reference</h3>
       <div class="legend-row"><div class="legend-code">D</div><div class="legend-text">Maxi win</div><div class="legend-pts">+10</div></div>
       <div class="legend-row"><div class="legend-code">A</div><div class="legend-text">Mini win</div><div class="legend-pts">+5</div></div>
       <div class="legend-row"><div class="legend-code">B</div><div class="legend-text">Safe / Lipsync win</div><div class="legend-pts">+3</div></div>
-      <div class="legend-row"><div class="legend-code">C</div><div class="legend-text">Wig/clothing reveal</div><div class="legend-pts">+2</div></div>
-      <div class="legend-row"><div class="legend-code">E</div><div class="legend-text">Ru laugh / bestie</div><div class="legend-pts">+1</div></div>
-      <div class="legend-row"><div class="legend-code" style="background:linear-gradient(135deg,#555,#333)">G</div><div class="legend-text">Feuding queens</div><div class="legend-pts" style="color:#FF3B30">-1</div></div>
-      <div class="legend-row"><div class="legend-code" style="background:linear-gradient(135deg,#555,#333)">F</div><div class="legend-text">Body reliant / nip slip</div><div class="legend-pts" style="color:#FF3B30">-2</div></div>
+      <div class="legend-row"><div class="legend-code">C</div><div class="legend-text">Wig/reveal <em>(accumulates)</em></div><div class="legend-pts">+2×</div></div>
+      <div class="legend-row"><div class="legend-code">E</div><div class="legend-text">Ru laugh / bestie <em>(accumulates)</em></div><div class="legend-pts">+1×</div></div>
+      <div class="legend-row"><div class="legend-code" style="background:linear-gradient(135deg,#555,#333)">G</div><div class="legend-text">Feuding</div><div class="legend-pts" style="color:#FF3B30">−1</div></div>
+      <div class="legend-row"><div class="legend-code" style="background:linear-gradient(135deg,#555,#333)">F</div><div class="legend-text">Nip slip / wig loss</div><div class="legend-pts" style="color:#FF3B30">−2</div></div>
       <div class="legend-row"><div class="legend-code" style="background:linear-gradient(135deg,#cc8800,#996600);color:#000">H</div><div class="legend-text">You picked the winner</div><div class="legend-pts" style="color:#FFD700">+50</div></div>
       <div class="legend-row"><div class="legend-code" style="background:linear-gradient(135deg,#cc8800,#996600);color:#000">I</div><div class="legend-text">Winner on your team</div><div class="legend-pts" style="color:#FFD700">+30</div></div>
       <div class="legend-row"><div class="legend-code" style="background:linear-gradient(135deg,#cc8800,#996600);color:#000">J</div><div class="legend-text">Miss Congeniality</div><div class="legend-pts" style="color:#FFD700">+25</div></div>
       <div class="legend-row"><div class="legend-code" style="background:linear-gradient(135deg,#cc8800,#996600);color:#000">K</div><div class="legend-text">Makes the finale</div><div class="legend-pts" style="color:#FFD700">+20</div></div>
-    </div>
-
-    <!-- Demo instructions -->
-    <div class="sidebar-card">
-      <h3>Try These Flows</h3>
-      <p>
-        1. <strong>Leaderboard</strong> — tap a player to jump to their team view.<br><br>
-        2. <strong>My Team</strong> — switch "Viewing As" above to explore different players' perspectives.<br><br>
-        3. <strong>Episodes</strong> — tap an aired episode card to see everyone's scores.<br><br>
-        4. <strong>Admin → Enter Ep 9</strong> — select codes for each queen, watch scores preview, then submit.<br><br>
-        5. <strong>Rules</strong> — full scoring reference.
-      </p>
     </div>
   </aside>
 
   <!-- ── iPhone Frame ──────────────────────────────────────── -->
   <div class="phone-wrap">
     <div class="phone">
-
-      <!-- Dynamic Island -->
       <div class="dynamic-island"></div>
 
-      <!-- Status Bar -->
       <div class="status-bar">
         <span>9:41</span>
-        <div class="status-right">
-          <span>●●●</span>
-          <span>WiFi</span>
-          <span>🔋</span>
-        </div>
+        <div class="status-right"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
       </div>
 
-      <!-- Screens -->
       <div class="screen-wrap">
         <div class="screen active" id="screen-leaderboard"></div>
         <div class="screen"        id="screen-myteam"></div>
+        <div class="screen"        id="screen-queens"></div>
         <div class="screen"        id="screen-episodes"></div>
-        <div class="screen"        id="screen-rules"></div>
         <div class="screen"        id="screen-admin"></div>
       </div>
 
-      <!-- Tab Bar -->
       <nav class="tab-bar">
         <button class="tab active" data-tab="leaderboard">
           <span class="tab-icon">🏆</span>
@@ -85,13 +87,13 @@
           <span class="tab-icon">👑</span>
           <span class="tab-label">My Team</span>
         </button>
+        <button class="tab" data-tab="queens">
+          <span class="tab-icon">👸</span>
+          <span class="tab-label">Queens</span>
+        </button>
         <button class="tab" data-tab="episodes">
           <span class="tab-icon">📺</span>
           <span class="tab-label">Episodes</span>
-        </button>
-        <button class="tab" data-tab="rules">
-          <span class="tab-icon">⭐</span>
-          <span class="tab-label">Rules</span>
         </button>
         <button class="tab" data-tab="admin">
           <span class="tab-icon">⚙️</span>
@@ -99,14 +101,11 @@
         </button>
       </nav>
 
-      <!-- Home indicator -->
       <div class="home-bar"></div>
+    </div>
 
-    </div><!-- /phone -->
-
-    <!-- Toast notification -->
     <div class="toast" id="toast"></div>
-  </div><!-- /phone-wrap -->
+  </div>
 
   <script src="data.js"></script>
   <script src="app.js"></script>
