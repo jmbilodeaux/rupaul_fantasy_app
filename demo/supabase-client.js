@@ -10,7 +10,8 @@ window.SB = (() => {
     if (!_sb && window.SUPABASE_CONFIG?.url && window.supabase) {
       _sb = window.supabase.createClient(
         window.SUPABASE_CONFIG.url,
-        window.SUPABASE_CONFIG.anonKey
+        window.SUPABASE_CONFIG.anonKey,
+        { auth: { flowType: 'implicit' } }
       );
     }
     return _sb;
