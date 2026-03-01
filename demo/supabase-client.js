@@ -177,6 +177,17 @@ window.SB = (() => {
     });
   }
 
+  async function verifyOtpCode(email, token) {
+    const sb = client();
+    if (!sb) return { error: { message: 'Supabase not configured' } };
+    const { data, error } = await sb.auth.verifyOtp({ email, token: token.trim(), type: 'email' });
+    if (!error && data?.session) {
+      _session = data.session;
+      await applyData();
+    }
+    return { data, error };
+  }
+
   async function signOut() {
     const sb = client();
     if (!sb) return;
@@ -210,5 +221,5 @@ window.SB = (() => {
   }
 
   return { init, refreshData, recheckSession, getSession, getCurrentPlayer,
-           signInWithEmail, signOut, postEpisodeScores, eliminateQueen };
+           signInWithEmail, verifyOtpCode, signOut, postEpisodeScores, eliminateQueen };
 })();

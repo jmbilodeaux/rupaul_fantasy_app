@@ -904,23 +904,46 @@ async function adminRequestMagicLink() {
   const { error } = await window.SB.signInWithEmail(email);
   if (error) { showToast(`❌ ${error.message}`); return; }
 
-  // Switch card to "waiting" state — user taps link in email, comes back and taps button
+  // Switch card to waiting state — offer both code entry (for PWA) and link tap (for browser)
   const card = document.querySelector('.admin-login-card');
   if (card) card.innerHTML = `
     <div class="login-icon">✉️</div>
     <div class="login-heading">Check your email</div>
     <div class="login-sub">
-      Sent a magic link to <strong style="color:var(--text)">${email}</strong>.<br><br>
-      Tap the link in your email, then come back here and tap the button below.
+      Sent to <strong style="color:var(--text)">${email}</strong>.<br><br>
+      Enter the <strong>6-digit code</strong> from the email:
     </div>
-    <button class="admin-action-btn" onclick="adminCheckSession()">
+    <input type="number" id="otp-code-input" class="login-email-input"
+           placeholder="123456" maxlength="6" inputmode="numeric"
+           style="font-size:28px;letter-spacing:6px;text-align:center" />
+    <button class="admin-action-btn" style="margin-top:12px" onclick="adminVerifyCode('${email}')">
       <span class="btn-icon">✓</span>
-      <div><div>I've tapped the link</div><div class="btn-sub">Tap to sign in</div></div>
+      <div><div>Verify Code</div><div class="btn-sub">Type the 6 digits from your email</div></div>
     </button>
+    <div class="login-sub" style="margin-top:16px;color:var(--text-sub)">
+      Or tap the magic link in your email and use the app in your browser.
+    </div>
     <button class="admin-secondary-btn" style="margin-top:8px" onclick="renderAdmin()">
       Try a different email
     </button>
   `;
+}
+
+async function adminVerifyCode(email) {
+  const token = document.getElementById('otp-code-input')?.value?.trim();
+  if (!token) { showToast('Enter the code from your email'); return; }
+  const btn = document.querySelector('.admin-login-card .admin-action-btn');
+  if (btn) btn.textContent = 'Verifying…';
+  const { error } = await window.SB.verifyOtpCode(email, token);
+  if (!error) {
+    state.queens = SHOW_QUEENS.map(q => ({ ...q }));
+    const me = window.SB.getCurrentPlayer();
+    if (me) state.viewingPlayer = me.id;
+    renderAll();
+  } else {
+    showToast(`❌ ${error.message || 'Invalid or expired code — try sending a new one'}`);
+    if (btn) btn.innerHTML = '<span class="btn-icon">✓</span><div><div>Verify Code</div><div class="btn-sub">Type the 6 digits from your email</div></div>';
+  }
 }
 
 async function adminCheckSession() {
